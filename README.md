@@ -1,92 +1,111 @@
-# Ex.No: 05  IMPLEMENTATION OF TIME SERIES ANALYSIS AND DECOMPOSITION
-### Date: 09/03/2026
 
+### Ex.No: 6 HOLT WINTERS METHOD
+
+### date 16/03/2026
 
 ### AIM:
-To Illustrates how to perform time series analysis and decomposition on the monthly average temperature of a city/country and for airline passengers.
+To implement the Holt Winters Method Model using Python.
 
 ### ALGORITHM:
-1. Import the required packages like pandas and numpy
-2. Read the data using the pandas
-3. Perform the decomposition process for the required data.
-4. Plot the data according to need, either seasonal_decomposition or trend plot.
-5. Display the overall results.
+1. You import the necessary libraries
+2. You load a CSV file containing daily sales data into a DataFrame, parse the 'date' column as
+datetime, set it as index, and perform some initial data exploration
+3. Resample it to a monthly frequency beginning of the month
+4. You plot the time series data, and determine whether it has additive/multiplicative
+trend/seasonality
+5. Split test,train data,create a model using Holt-Winters method, train with train data and
+Evaluate the model predictions against test data
+6. Create teh final model and predict future data and plot it
+
 
 ### PROGRAM:
 ```
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
-from statsmodels.tsa.seasonal import seasonal_decompose
+from statsmodels.tsa.holtwinters import ExponentialSmoothing
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.metrics import mean_squared_error
+data = pd.read_csv('AirPassengers.csv', parse_dates=['Month'], index_col='Month')
 
-# 1. Load data and convert date
-df = pd.read_csv('data.csv')
-df['date'] = pd.to_datetime(df['date'])
+print(data.head())
 
-# 2. Prepare daily series
-daily_data = df.groupby('date')['price'].mean().asfreq('D').interpolate()
 
-# 3. Perform Decomposition
-result = seasonal_decompose(daily_data, model='additive', period=7)
+data_monthly = data.resample('MS').sum()
 
-# --- OUTPUT GENERATION ---
-print("FIRST FIVE ROWS:")
-print(df[['date', 'price']].head())
 
-# Plotting
-plt.figure(figsize=(10,4))
-plt.plot(daily_data)
-plt.title("PLOTTING THE DATA")
+data_monthly.plot(title="Time Series Data")
 plt.show()
 
-plt.figure(figsize=(10,4))
-plt.plot(result.seasonal)
-plt.title("SEASONAL PLOT REPRESENTATION")
+
+scaler = MinMaxScaler()
+scaled_data = pd.Series(
+    scaler.fit_transform(data_monthly.values.reshape(-1, 1)).flatten(),
+    index=data_monthly.index
+)
+
+scaled_data = scaled_data + 1
+
+
+train_size = int(len(scaled_data) * 0.8)
+train = scaled_data[:train_size]
+test = scaled_data[train_size:]
+
+
+model = ExponentialSmoothing(
+    train,
+    trend='add',
+    seasonal='mul',
+    seasonal_periods=12
+).fit()
+
+pred = model.forecast(len(test))
+
+
+ax = train.plot()
+pred.plot(ax=ax)
+test.plot(ax=ax)
+ax.legend(["Train", "Prediction", "Test"])
 plt.show()
 
-plt.figure(figsize=(10,4))
-plt.plot(result.trend)
-plt.title("TREND PLOT REPRESENTATION")
+
+rmse = np.sqrt(mean_squared_error(test, pred))
+print("RMSE:", rmse)
+
+
+final_model = ExponentialSmoothing(
+    scaled_data,
+    trend='add',
+    seasonal='mul',
+    seasonal_periods=12
+).fit()
+
+future = final_model.forecast(12)
+
+ax = scaled_data.plot()
+future.plot(ax=ax)
+ax.legend(["Data", "Future"])
 plt.show()
-
-result.plot()
-plt.suptitle("OVERALL REPRESENTATION", fontsize=15)
-plt.show()
-```
+````
+### OUTPUT
 
 
+<img width="945" height="615" alt="Screenshot 2026-03-27 211503" src="https://github.com/user-attachments/assets/be4534bd-572f-48a0-9f27-bc2382418940" />
 
+<img width="857" height="609" alt="Screenshot 2026-03-27 211512" src="https://github.com/user-attachments/assets/f66112e4-e728-4548-b33a-2024af45d916" />
 
-### OUTPUT:
-FIRST FIVE ROWS:
-```
-        date      price
-0 2014-05-02   313000.0
-1 2014-05-02  2384000.0
-2 2014-05-02   342000.0
-3 2014-05-02   420000.0
-4 2014-05-02   550000.0
-```
-
-PLOTTING THE DATA:
-<img width="826" height="374" alt="tas 5 1" src="https://github.com/user-attachments/assets/0213b14d-2213-4f42-a50a-3377b54bdf9c" />
-
-
-
-SEASONAL PLOT REPRESENTATION :
-
-<img width="860" height="374" alt="tas 5 2" src="https://github.com/user-attachments/assets/cb360fa0-42dd-4e78-b0c7-8a0508a38705" />
-
-
-
-TREND PLOT REPRESENTATION :
-
-<img width="873" height="374" alt="tas 5 3" src="https://github.com/user-attachments/assets/d7d9cfe1-77f0-4746-90e4-b93d1bc513e8" />
-
-
-OVERAL REPRESENTATION:
-<img width="987" height="593" alt="tas 5 4" src="https://github.com/user-attachments/assets/b5dce1f1-0a43-4e36-adf8-4f28853b5a29" />
+<img width="864" height="632" alt="Screenshot 2026-03-27 211519" src="https://github.com/user-attachments/assets/2718ae65-ea81-4896-bdb4-98dd2fb39330" />
 
 
 
 ### RESULT:
-Thus we have created the python code for the time series analysis and decomposition.
+Thus the program run successfully based on the Holt Winters Method model.
+
+
+
+
+
+
+
+
+
